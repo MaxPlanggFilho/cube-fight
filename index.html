@@ -18,8 +18,14 @@
             <div class="menu-buttons">
                 <button id="start-game-btn" class="btn btn-primary">Iniciar Jogo</button>
                 <button id="open-shop-btn" class="btn btn-secondary">Loja</button>
+                <button id="open-skins-btn" class="btn btn-secondary">Escolher Skin</button>
+                <button id="open-history-btn" class="btn btn-secondary">Histórico</button>
             </div>
             <div class="stats-display">
+                <div class="stat-item">
+                    <span class="stat-label">Sequência de Vitórias:</span>
+                    <span id="lobby-win-streak">0</span>
+                </div>
                 <div class="stat-item">
                     <span class="stat-label">Vida Extra:</span>
                     <span id="lobby-health-bonus">0%</span>
@@ -67,8 +73,74 @@
                         Comprar (40 🪙)
                     </button>
                 </div>
+                <div class="shop-item">
+                    <div class="item-icon">🎲</div>
+                    <div class="item-info">
+                        <h3>Cubo Mágico</h3>
+                        <p>Skin exclusiva de cubo mágico (Rubik's Cube)</p>
+                        <div class="item-stats">
+                            <span>Skin Cosmética</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-buy" data-item="rubiks_cube" data-cost="3000">
+                        Comprar (3000 🪙)
+                    </button>
+                </div>
             </div>
             <button id="back-to-lobby-btn" class="btn btn-secondary">Voltar ao Lobby</button>
+        </div>
+    </div>
+
+    <!-- Tela de Seleção de Skins -->
+    <div id="skins-screen" class="screen">
+        <div class="shop-container">
+            <h2 class="shop-title">ESCOLHER SKIN</h2>
+            <div class="coins-display">
+                <span class="coin-icon">🪙</span>
+                <span id="skins-coins">0</span> moedas
+            </div>
+            <div class="shop-items" id="skins-list">
+                <!-- Skins serão adicionadas dinamicamente -->
+            </div>
+            <button id="back-to-lobby-from-skins" class="btn btn-secondary">Voltar ao Lobby</button>
+        </div>
+    </div>
+
+    <!-- Tela de Histórico -->
+    <div id="history-screen" class="screen">
+        <div class="shop-container">
+            <h2 class="shop-title">HISTÓRICO</h2>
+            <div class="history-stats">
+                <div class="history-stat-item">
+                    <div class="history-stat-icon">💀</div>
+                    <div class="history-stat-info">
+                        <h3>Eliminações Totais</h3>
+                        <p class="history-stat-value" id="total-eliminations">0</p>
+                    </div>
+                </div>
+                <div class="history-stat-item">
+                    <div class="history-stat-icon">🏆</div>
+                    <div class="history-stat-info">
+                        <h3>Partidas Ganhas</h3>
+                        <p class="history-stat-value" id="total-wins">0</p>
+                    </div>
+                </div>
+                <div class="history-stat-item">
+                    <div class="history-stat-icon">🎮</div>
+                    <div class="history-stat-info">
+                        <h3>Partidas Jogadas</h3>
+                        <p class="history-stat-value" id="total-games">0</p>
+                    </div>
+                </div>
+                <div class="history-stat-item">
+                    <div class="history-stat-icon">📊</div>
+                    <div class="history-stat-info">
+                        <h3>Taxa de Vitória</h3>
+                        <p class="history-stat-value" id="win-rate">0%</p>
+                    </div>
+                </div>
+            </div>
+            <button id="back-to-lobby-from-history" class="btn btn-secondary">Voltar ao Lobby</button>
         </div>
     </div>
 
@@ -91,7 +163,8 @@
                 <h2 id="game-over-title">Fim de Jogo</h2>
                 <p id="game-over-message"></p>
                 <div id="victory-reward" class="victory-reward" style="display: none;">
-                    <p>Você ganhou <span id="reward-amount">20</span> moedas! 🪙</p>
+                    <p>Você ganhou <span id="reward-amount">40</span> moedas! 🪙</p>
+                    <p id="streak-info" style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;"></p>
                 </div>
                 <button id="back-to-lobby-from-game" class="btn btn-primary">Voltar ao Lobby</button>
             </div>

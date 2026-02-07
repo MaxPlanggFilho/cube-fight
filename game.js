@@ -25,6 +25,72 @@ class GameData {
         const level = this.getUpgradeLevel(item);
         return level * 0.1; // 10% por nível
     }
+
+    static getWinStreak() {
+        return parseInt(localStorage.getItem('winStreak') || '0');
+    }
+
+    static setWinStreak(streak) {
+        localStorage.setItem('winStreak', streak.toString());
+    }
+
+    static incrementWinStreak() {
+        const current = this.getWinStreak();
+        this.setWinStreak(current + 1);
+        return current + 1;
+    }
+
+    static resetWinStreak() {
+        this.setWinStreak(0);
+    }
+
+    static hasSkin(skinId) {
+        const ownedSkins = JSON.parse(localStorage.getItem('ownedSkins') || '[]');
+        return ownedSkins.includes(skinId);
+    }
+
+    static addSkin(skinId) {
+        const ownedSkins = JSON.parse(localStorage.getItem('ownedSkins') || '[]');
+        if (!ownedSkins.includes(skinId)) {
+            ownedSkins.push(skinId);
+            localStorage.setItem('ownedSkins', JSON.stringify(ownedSkins));
+        }
+    }
+
+    static getSelectedSkin() {
+        return localStorage.getItem('selectedSkin') || 'default';
+    }
+
+    static setSelectedSkin(skinId) {
+        localStorage.setItem('selectedSkin', skinId);
+    }
+
+    static getTotalEliminations() {
+        return parseInt(localStorage.getItem('totalEliminations') || '0');
+    }
+
+    static addEliminations(count) {
+        const current = this.getTotalEliminations();
+        localStorage.setItem('totalEliminations', (current + count).toString());
+    }
+
+    static getTotalGamesPlayed() {
+        return parseInt(localStorage.getItem('totalGamesPlayed') || '0');
+    }
+
+    static incrementGamesPlayed() {
+        const current = this.getTotalGamesPlayed();
+        localStorage.setItem('totalGamesPlayed', (current + 1).toString());
+    }
+
+    static getTotalWins() {
+        return parseInt(localStorage.getItem('totalWins') || '0');
+    }
+
+    static incrementWins() {
+        const current = this.getTotalWins();
+        localStorage.setItem('totalWins', (current + 1).toString());
+    }
 }
 
 // ==================== SISTEMA DE TELAS ====================
@@ -57,6 +123,26 @@ class ScreenManager {
             this.updateLobbyDisplay();
         });
 
+        document.getElementById('open-skins-btn').addEventListener('click', () => {
+            this.showScreen('skins-screen');
+            skinSelector.updateDisplay();
+        });
+
+        document.getElementById('back-to-lobby-from-skins').addEventListener('click', () => {
+            this.showScreen('lobby-screen');
+            this.updateLobbyDisplay();
+        });
+
+        document.getElementById('open-history-btn').addEventListener('click', () => {
+            this.showScreen('history-screen');
+            historyManager.updateDisplay();
+        });
+
+        document.getElementById('back-to-lobby-from-history').addEventListener('click', () => {
+            this.showScreen('lobby-screen');
+            this.updateLobbyDisplay();
+        });
+
         this.updateLobbyDisplay();
     }
 
@@ -78,6 +164,9 @@ class ScreenManager {
     updateLobbyDisplay() {
         const coins = GameData.getCoins();
         document.getElementById('lobby-coins').textContent = coins;
+
+        const winStreak = GameData.getWinStreak();
+        document.getElementById('lobby-win-streak').textContent = winStreak;
 
         const healthBonus = GameData.getUpgradeBonus('health');
         const speedBonus = GameData.getUpgradeBonus('speed');
@@ -113,9 +202,39 @@ class Shop {
         document.querySelectorAll('.btn-buy').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const item = e.target.dataset.item;
-                this.buyItem(item);
+                if (item === 'rubiks_cube') {
+                    this.buySkin(item);
+                } else {
+                    this.buyItem(item);
+                }
             });
         });
+    }
+
+    buySkin(skinId) {
+        if (GameData.hasSkin(skinId)) {
+            alert('Você já possui esta skin!');
+            return;
+        }
+
+        const skinCosts = {
+            'rubiks_cube': 3000
+        };
+
+        const cost = skinCosts[skinId] || 0;
+        const coins = GameData.getCoins();
+
+        if (coins < cost) {
+            alert('Moedas insuficientes!');
+            return;
+        }
+
+        GameData.addSkin(skinId);
+        GameData.setCoins(coins - cost);
+
+        this.updateDisplay();
+        screenManager.updateLobbyDisplay();
+        alert('Skin comprada com sucesso!');
     }
 
     buyItem(item) {
@@ -156,26 +275,157 @@ class Shop {
         // Atualizar botões de compra (custo dinâmico e limite de nível)
         document.querySelectorAll('.btn-buy').forEach(btn => {
             const item = btn.dataset.item;
-            const level = GameData.getUpgradeLevel(item);
-            const coinsNow = GameData.getCoins();
-
-            if (level >= 10) {
-                // Nível máximo: botão desativado e texto de MAX
-                btn.disabled = true;
-                btn.textContent = 'NÍVEL MÁXIMO';
+            
+            // Verificar se é uma skin
+            if (item === 'rubiks_cube') {
+                const coinsNow = GameData.getCoins();
+                const cost = 3000;
+                const hasSkin = GameData.hasSkin(item);
+                
+                if (hasSkin) {
+                    btn.disabled = true;
+                    btn.textContent = 'JÁ POSSUI';
+                } else {
+                    btn.disabled = coinsNow < cost;
+                    btn.textContent = `Comprar (${cost} 🪙)`;
+                }
             } else {
-                const cost = this.getItemCost(item);
-                btn.disabled = coinsNow < cost;
-                // Atualizar texto mostrando o custo atual
-                const label =
-                    item === 'health'
-                        ? `Comprar Vida (${cost} 🪙)`
-                        : item === 'speed'
-                            ? `Comprar Velocidade (${cost} 🪙)`
-                            : `Comprar (${cost} 🪙)`;
-                btn.textContent = label;
+                // Upgrade normal
+                const level = GameData.getUpgradeLevel(item);
+                const coinsNow = GameData.getCoins();
+
+                if (level >= 10) {
+                    // Nível máximo: botão desativado e texto de MAX
+                    btn.disabled = true;
+                    btn.textContent = 'NÍVEL MÁXIMO';
+                } else {
+                    const cost = this.getItemCost(item);
+                    btn.disabled = coinsNow < cost;
+                    // Atualizar texto mostrando o custo atual
+                    const label =
+                        item === 'health'
+                            ? `Comprar Vida (${cost} 🪙)`
+                            : item === 'speed'
+                                ? `Comprar Velocidade (${cost} 🪙)`
+                                : `Comprar (${cost} 🪙)`;
+                    btn.textContent = label;
+                }
             }
         });
+    }
+}
+
+// ==================== SISTEMA DE SELEÇÃO DE SKINS ====================
+class SkinSelector {
+    constructor() {
+        this.skins = [
+            {
+                id: 'default',
+                name: 'Padrão',
+                icon: '🔵',
+                description: 'Skin padrão do jogo',
+                owned: true // Sempre possuída
+            },
+            {
+                id: 'rubiks_cube',
+                name: 'Cubo Mágico',
+                icon: '🎲',
+                description: 'Skin exclusiva de cubo mágico (Rubik\'s Cube)',
+                owned: false
+            }
+        ];
+        this.init();
+    }
+
+    init() {
+        // Event listeners serão adicionados dinamicamente no updateDisplay
+    }
+
+    updateDisplay() {
+        const coins = GameData.getCoins();
+        document.getElementById('skins-coins').textContent = coins;
+
+        const skinsList = document.getElementById('skins-list');
+        skinsList.innerHTML = '';
+
+        const selectedSkin = GameData.getSelectedSkin();
+
+        this.skins.forEach(skin => {
+            const owned = skin.id === 'default' || GameData.hasSkin(skin.id);
+            skin.owned = owned;
+
+            const skinItem = document.createElement('div');
+            skinItem.className = 'shop-item';
+            
+            const isSelected = selectedSkin === skin.id;
+            
+            skinItem.innerHTML = `
+                <div class="item-icon">${skin.icon}</div>
+                <div class="item-info">
+                    <h3>${skin.name} ${isSelected ? '✓' : ''}</h3>
+                    <p>${skin.description}</p>
+                    <div class="item-stats">
+                        ${owned ? '<span style="color: #10b981;">✓ Possuída</span>' : '<span style="color: #ef4444;">✗ Não Possuída</span>'}
+                    </div>
+                </div>
+                ${owned 
+                    ? `<button class="btn ${isSelected ? 'btn-primary' : 'btn-buy'}" data-skin="${skin.id}">
+                        ${isSelected ? 'Selecionada' : 'Selecionar'}
+                    </button>`
+                    : '<button class="btn btn-buy" disabled>Não Possuída</button>'
+                }
+            `;
+
+            skinsList.appendChild(skinItem);
+        });
+
+        // Adicionar event listeners aos botões
+        document.querySelectorAll('#skins-list .btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const skinId = e.target.dataset.skin;
+                if (skinId) {
+                    this.selectSkin(skinId);
+                }
+            });
+        });
+    }
+
+    selectSkin(skinId) {
+        const skin = this.skins.find(s => s.id === skinId);
+        if (!skin) return;
+
+        if (!skin.owned && skinId !== 'default') {
+            alert('Você não possui esta skin!');
+            return;
+        }
+
+        GameData.setSelectedSkin(skinId);
+        this.updateDisplay();
+        alert(`Skin "${skin.name}" selecionada!`);
+    }
+}
+
+// ==================== SISTEMA DE HISTÓRICO ====================
+class HistoryManager {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        // Event listeners já foram adicionados no ScreenManager
+    }
+
+    updateDisplay() {
+        const totalEliminations = GameData.getTotalEliminations();
+        const totalWins = GameData.getTotalWins();
+        const totalGames = GameData.getTotalGamesPlayed();
+        
+        const winRate = totalGames > 0 ? ((totalWins / totalGames) * 100).toFixed(1) : 0;
+
+        document.getElementById('total-eliminations').textContent = totalEliminations;
+        document.getElementById('total-wins').textContent = totalWins;
+        document.getElementById('total-games').textContent = totalGames;
+        document.getElementById('win-rate').textContent = `${winRate}%`;
     }
 }
 
@@ -200,25 +450,85 @@ class Entity {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
 
-        // Corpo
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+        // Desenhar skin baseada na seleção
+        if (this.skin === 'rubiks_cube') {
+            this.drawRubiksCube(ctx);
+        } else {
+            // Skin padrão
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
 
-        // Direção (triângulo)
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.moveTo(this.radius, 0);
-        ctx.lineTo(-this.radius * 0.5, -this.radius * 0.5);
-        ctx.lineTo(-this.radius * 0.5, this.radius * 0.5);
-        ctx.closePath();
-        ctx.fill();
+            // Direção (triângulo)
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(this.radius, 0);
+            ctx.lineTo(-this.radius * 0.5, -this.radius * 0.5);
+            ctx.lineTo(-this.radius * 0.5, this.radius * 0.5);
+            ctx.closePath();
+            ctx.fill();
+        }
 
         ctx.restore();
 
         // Barra de vida
         this.drawHealthBar(ctx);
+    }
+
+    drawRubiksCube(ctx) {
+        // Atualizar rotação para animação
+        this.rotation += 0.02;
+        
+        const size = this.radius * 1.5;
+        const squareSize = size / 3;
+        
+        // Cores do cubo mágico (Rubik's Cube) - padrão clássico
+        const faceColors = [
+            ['#ff0000', '#ff0000', '#ff0000'], // Linha 1 - Vermelho
+            ['#00ff00', '#ffffff', '#0000ff'], // Linha 2 - Verde, Branco, Azul
+            ['#ffff00', '#ffff00', '#ffff00']  // Linha 3 - Amarelo
+        ];
+        
+        ctx.save();
+        
+        // Desenhar face frontal do cubo (3x3 grid)
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const x = (col - 1) * squareSize;
+                const y = (row - 1) * squareSize;
+                
+                // Cor do quadrado
+                ctx.fillStyle = faceColors[row][col];
+                ctx.fillRect(x - squareSize/2, y - squareSize/2, squareSize, squareSize);
+                
+                // Borda preta
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x - squareSize/2, y - squareSize/2, squareSize, squareSize);
+            }
+        }
+        
+        // Efeito de profundidade - sombra nas bordas
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-size/2 - 2, -size/2 - 2, size + 4, size + 4);
+        
+        // Indicador de direção (pequeno triângulo branco na borda)
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(this.radius * 0.9, 0);
+        ctx.lineTo(this.radius * 0.6, -this.radius * 0.25);
+        ctx.lineTo(this.radius * 0.6, this.radius * 0.25);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Borda do triângulo
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.restore();
     }
 
     drawHealthBar(ctx) {
@@ -291,6 +601,8 @@ class Player extends Entity {
         this.maxHealth = 100 * (1 + healthBonus);
         this.health = this.maxHealth;
         this.speed = 2 * (1 + speedBonus);
+        this.skin = GameData.getSelectedSkin();
+        this.rotation = 0; // Para animação do cubo mágico
     }
 
     update(mouseX, mouseY, keys, walls = []) {
@@ -985,6 +1297,7 @@ class Game {
         this.shootCooldown = 200; // 0.2 segundos
         this.isRunning = false;
         this.animationId = null;
+        this.eliminationsThisGame = 0; // Contador de eliminações nesta partida
 
         // Sistema de câmera
         this.camera = {
@@ -1061,8 +1374,11 @@ class Game {
         this.isRunning = true;
         // Player começa no centro do mundo
         this.player = new Player(this.worldWidth / 2, this.worldHeight / 2);
+        // Atualizar skin do player
+        this.player.skin = GameData.getSelectedSkin();
         this.bots = [];
         this.bullets = [];
+        this.eliminationsThisGame = 0; // Resetar contador de eliminações
 
         // Inicializar câmera no centro do mundo
         this.camera.x = this.player.x - this.canvas.width / 2;
@@ -1237,7 +1553,12 @@ class Game {
 
             this.bots.forEach(bot => {
                 if (bullet.checkCollision(bot)) {
+                    const wasAlive = bot.isAlive;
                     bot.takeDamage(10);
+                    // Contar eliminação se o bot morreu
+                    if (wasAlive && !bot.isAlive) {
+                        this.eliminationsThisGame++;
+                    }
                     bullet.isAlive = false;
                 }
             });
@@ -1522,30 +1843,68 @@ class Game {
         const gameOverMessage = document.getElementById('game-over-message');
         const victoryReward = document.getElementById('victory-reward');
         const rewardAmount = document.getElementById('reward-amount');
+        const streakInfo = document.getElementById('streak-info');
 
         gameOverScreen.classList.add('active');
 
+        // Atualizar estatísticas do jogo
+        GameData.incrementGamesPlayed();
+        GameData.addEliminations(this.eliminationsThisGame);
+
         if (victory) {
+            // Incrementar vitórias
+            GameData.incrementWins();
             gameOverTitle.textContent = 'Vitória!';
             gameOverTitle.style.color = '#10b981';
-            gameOverMessage.textContent = 'Parabéns! Você eliminou todos os inimigos!';
+            
+            // Incrementar sequência de vitórias
+            const newStreak = GameData.incrementWinStreak();
+            const baseReward = 40;
+            const bonusReward = (newStreak - 1) * 10; // Primeira vitória = 0 bonus, segunda = 10, terceira = 20, etc.
+            const totalReward = baseReward + bonusReward;
+            
+            if (newStreak > 1) {
+                gameOverMessage.textContent = `Parabéns! Você eliminou todos os inimigos! Sequência de ${newStreak} vitórias!`;
+                streakInfo.textContent = `Bônus de sequência: +${bonusReward} moedas (${baseReward} base + ${bonusReward} bônus)`;
+                streakInfo.style.display = 'block';
+            } else {
+                gameOverMessage.textContent = 'Parabéns! Você eliminou todos os inimigos!';
+                streakInfo.style.display = 'none';
+            }
+            
             victoryReward.style.display = 'block';
 
-            // Adicionar moedas
-            GameData.addCoins(20);
-            rewardAmount.textContent = '20';
+            // Adicionar moedas baseadas na sequência
+            GameData.addCoins(totalReward);
+            rewardAmount.textContent = totalReward.toString();
         } else {
             gameOverTitle.textContent = 'Derrota';
             gameOverTitle.style.color = '#ef4444';
-            gameOverMessage.textContent = 'Você foi eliminado! Tente novamente.';
+            
+            // Resetar sequência ao perder
+            const lostStreak = GameData.getWinStreak();
+            GameData.resetWinStreak();
+            
+            if (lostStreak > 0) {
+                gameOverMessage.textContent = `Você foi eliminado! Sequência de ${lostStreak} vitórias perdida. Tente novamente.`;
+            } else {
+                gameOverMessage.textContent = 'Você foi eliminado! Tente novamente.';
+            }
+            
             victoryReward.style.display = 'none';
+            streakInfo.style.display = 'none';
         }
+        
+        // Atualizar display do lobby após fim de jogo
+        screenManager.updateLobbyDisplay();
     }
 }
 
 // ==================== INICIALIZAÇÃO ====================
 const screenManager = new ScreenManager();
 const shop = new Shop();
+const skinSelector = new SkinSelector();
+const historyManager = new HistoryManager();
 const game = new Game();
 
 // Variável global para o canvas (usada em algumas classes)
