@@ -1,19 +1,103 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Battle Royale 2D - Protótipo</title>
-  <style>
-    html, body { height: 100%; margin: 0; }
-    body { background:#111; color:#ddd; font-family: Arial, Helvetica, sans-serif; }
-    #game-container { width: 100%; height: 100vh; overflow: hidden; }
-    canvas { display: block; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cube Fight - Jogo de Tiros</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="game-container"></div>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-  <script src="main.js"></script>
+    <!-- Tela de Lobby -->
+    <div id="lobby-screen" class="screen active">
+        <div class="lobby-container">
+            <h1 class="game-title">CUBE FIGHT</h1>
+            <div class="coins-display">
+                <span class="coin-icon">🪙</span>
+                <span id="lobby-coins">0</span> moedas
+            </div>
+            <div class="menu-buttons">
+                <button id="start-game-btn" class="btn btn-primary">Iniciar Jogo</button>
+                <button id="open-shop-btn" class="btn btn-secondary">Loja</button>
+            </div>
+            <div class="stats-display">
+                <div class="stat-item">
+                    <span class="stat-label">Vida Extra:</span>
+                    <span id="lobby-health-bonus">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Velocidade Extra:</span>
+                    <span id="lobby-speed-bonus">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Loja -->
+    <div id="shop-screen" class="screen">
+        <div class="shop-container">
+            <h2 class="shop-title">LOJA</h2>
+            <div class="coins-display">
+                <span class="coin-icon">🪙</span>
+                <span id="shop-coins">0</span> moedas
+            </div>
+            <div class="shop-items">
+                <div class="shop-item">
+                    <div class="item-icon">❤️</div>
+                    <div class="item-info">
+                        <h3>Vida Extra +10%</h3>
+                        <p>Aumenta a vida máxima em 10%</p>
+                        <div class="item-stats">
+                            <span>Nível: <span id="health-level">0</span></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-buy" data-item="health" data-cost="40">
+                        Comprar (40 🪙)
+                    </button>
+                </div>
+                <div class="shop-item">
+                    <div class="item-icon">⚡</div>
+                    <div class="item-info">
+                        <h3>Velocidade Extra +10%</h3>
+                        <p>Aumenta a velocidade de movimento em 10%</p>
+                        <div class="item-stats">
+                            <span>Nível: <span id="speed-level">0</span></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-buy" data-item="speed" data-cost="40">
+                        Comprar (40 🪙)
+                    </button>
+                </div>
+            </div>
+            <button id="back-to-lobby-btn" class="btn btn-secondary">Voltar ao Lobby</button>
+        </div>
+    </div>
+
+    <!-- Tela de Jogo -->
+    <div id="game-screen" class="screen">
+        <canvas id="game-canvas"></canvas>
+        <div class="game-ui">
+            <div class="health-bar-container">
+                <div class="health-label">Vida: <span id="player-health">100</span>/<span id="player-max-health">100</span></div>
+                <div class="health-bar">
+                    <div id="health-bar-fill" class="health-bar-fill"></div>
+                </div>
+            </div>
+            <div class="enemies-count">
+                Inimigos: <span id="enemies-remaining">20</span>
+            </div>
+        </div>
+        <div id="game-over-screen" class="game-over">
+            <div class="game-over-content">
+                <h2 id="game-over-title">Fim de Jogo</h2>
+                <p id="game-over-message"></p>
+                <div id="victory-reward" class="victory-reward" style="display: none;">
+                    <p>Você ganhou <span id="reward-amount">20</span> moedas! 🪙</p>
+                </div>
+                <button id="back-to-lobby-from-game" class="btn btn-primary">Voltar ao Lobby</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
 </body>
 </html>
